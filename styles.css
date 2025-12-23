@@ -780,26 +780,66 @@ body::before {
 
 /* Responsive */
 @media (max-width: 768px) {
+    /* Contenedor principal */
+    .container {
+        padding: 10px;
+        max-width: 100%;
+    }
+
+    /* Header */
+    .header {
+        padding: 20px 15px;
+    }
+
     .header h1 {
-        font-size: 2em;
+        font-size: 1.8em;
+    }
+
+    .subtitle {
+        font-size: 0.9em;
     }
     
+    /* Podio */
+    .podium {
+        padding: 15px;
+        margin-top: 15px;
+    }
+
     .podium-header {
         flex-direction: column;
         align-items: center;
         text-align: center;
+        gap: 10px;
+    }
+
+    .podium-header h3 {
+        font-size: 1.3em;
     }
     
     .year-selector {
         width: 100%;
         justify-content: center;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .year-btn {
+        padding: 6px 12px;
+        font-size: 0.85em;
     }
     
     .podium-places {
         flex-direction: column;
         align-items: center;
+        gap: 15px;
     }
     
+    .podium-place {
+        width: 100%;
+        max-width: 280px;
+        padding: 15px;
+    }
+
     .podium-place.first {
         order: 1;
     }
@@ -811,7 +851,30 @@ body::before {
     .podium-place.third {
         order: 3;
     }
+
+    .place-avatar {
+        width: 70px !important;
+        height: 70px !important;
+    }
+
+    .podium-place.first .place-avatar {
+        width: 80px !important;
+        height: 80px !important;
+    }
+
+    .place-name {
+        font-size: 1.1em;
+    }
+
+    .place-count {
+        font-size: 1.3em;
+    }
     
+    /* Eventos */
+    .events-section {
+        padding: 15px;
+    }
+
     .events-list {
         grid-template-columns: 1fr;
     }
@@ -819,10 +882,150 @@ body::before {
     .events-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 15px;
+    }
+
+    .events-header h2 {
+        font-size: 1.5em;
+    }
+
+    .events-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .btn-action {
+        flex: 1;
+        min-width: 120px;
+        font-size: 0.85em;
+        padding: 8px 12px;
+    }
+
+    /* Event cards */
+    .event-card {
+        padding: 15px;
+    }
+
+    .event-card h3 {
+        font-size: 1.3em;
+    }
+
+    .event-description {
+        font-size: 0.95em;
+    }
+
+    .event-image {
+        max-height: 200px;
+    }
+
+    .btn-delete {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+
+    /* Garkas */
+    .garkas-section h4 {
+        font-size: 1.1em;
+    }
+
+    .garka-item {
+        padding: 10px;
+        flex-wrap: wrap;
+    }
+
+    .garka-avatar {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .garka-info {
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .garka-info strong {
+        font-size: 0.95em;
+    }
+
+    .garka-info span {
+        font-size: 0.85em;
+    }
+
+    .btn-add-garka {
+        font-size: 0.9em;
+        padding: 10px;
     }
     
-    .form-section,
-    .events-section {
+    /* Formulario */
+    .form-section {
+        padding: 15px;
+    }
+
+    .form-section h2 {
+        font-size: 1.5em;
+    }
+
+    .form-group label {
+        font-size: 0.95em;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        font-size: 14px;
+    }
+
+    .btn-submit {
+        font-size: 1em;
+        padding: 12px;
+    }
+
+    /* Modales */
+    .garka-modal .modal-content,
+    .access-code-modal .modal-content {
+        width: 95%;
+        max-width: 400px;
         padding: 20px;
+    }
+
+    .modal-content h3 {
+        font-size: 1.3em;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .modal-actions button {
+        width: 100%;
+    }
+
+    /* Notificación */
+    .notification {
+        width: 90%;
+        max-width: 350px;
+        font-size: 0.9em;
+    }
+}
+
+/* Pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.5em;
+    }
+
+    .podium-place {
+        max-width: 100%;
+    }
+
+    .events-actions {
+        flex-direction: column;
+    }
+
+    .btn-action {
+        width: 100%;
+        min-width: auto;
     }
 }
