@@ -1,8 +1,9 @@
 // Estado de la aplicación
 let events = [];
-let selectedYear = new Date().getFullYear(); // Año actual por defecto
-let accessCode = ''; // Se cargará desde config.json
-let persons = []; // Personas disponibles
+let selectedYear = new Date().getFullYear();
+let accessCode = '';
+let persons = [];
+const openComments = new Set(); // IDs de tarjetas con comentarios abiertos
 
 // Cargar personas desde persons.json
 async function loadPersons() {
@@ -141,47 +142,55 @@ async function handleImagePreview(e) {
 function renderEvents() {
     const eventsList = document.getElementById('eventsList');
 
-    // Actualizar podio
     updatePodium();
+    updateStats();
 
     if (events.length === 0) {
         eventsList.innerHTML = `
             <div class="empty-state">
                 <span class="emoji">🎮</span>
-                <p>No hay eventos programados</p>
-                <p style="font-size: 0.9em;">¡Crea el primer evento FIFA con tus amigos!</p>
+                <p>No hay eventos registrados</p>
+                <p>¡Crea el primer evento FIFA con tus amigos!</p>
             </div>
         `;
         return;
     }
 
-    // Ordenar eventos por fecha (más nuevo primero)
     const sortedEvents = [...events].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     eventsList.innerHTML = sortedEvents.map(event => {
         const eventDate = new Date(event.date);
         const formattedDate = formatDate(eventDate);
-        const imageHTML = event.image 
-            ? `<img src="${event.image}" alt="${event.title}" class="event-image">` 
-            : '';
-        
-        // Inicializar array de garkas si no existe
-        if (!event.garkas) {
-            event.garkas = [];
-        }
 
-        // Clase especial si tiene garkas
+        if (!event.garkas) event.garkas = [];
+
         const hasGarkas = event.garkas.length > 0;
-        const cardClass = hasGarkas ? 'event-card event-card-with-garkas' : 'event-card';
+        const noImage = !event.image;
+        const cardClass = [
+            'event-card',
+            hasGarkas ? 'event-card-with-garkas' : '',
+            noImage ? 'no-image' : ''
+        ].filter(Boolean).join(' ');
 
-        const garkasHTML = event.garkas.length > 0 
-            ? `
-                <div class="garkas-section">
-                    <h4>🏆 GARKAS</h4>
+        const imageSection = event.image
+            ? `<div class="event-image-wrapper">
+                <img src="${event.image}" alt="${escapeHtml(event.title)}" class="event-image">
+               </div>`
+            : '';
+
+        const garkaBadge = hasGarkas
+            ? `<div class="garka-badge">🏆 ${event.garkas.length} ${event.garkas.length === 1 ? 'Garka' : 'Garkas'}</div>`
+            : '';
+
+        const garkasHTML = hasGarkas
+            ? `<div class="garkas-section">
+                    <h4>🏆 Garkas</h4>
                     <div class="garkas-list">
                         ${event.garkas.map((garka, index) => {
                             const person = persons.find(p => p.name === garka.name);
-                            const avatarHTML = person ? `<img src="${person.avatar}" alt="${garka.name}" class="garka-avatar" onerror="this.style.display='none'">` : '';
+                            const avatarHTML = person
+                                ? `<img src="${person.avatar}" alt="${escapeHtml(garka.name)}" class="garka-avatar" onerror="this.style.display='none'">`
+                                : '';
                             return `
                                 <div class="garka-item">
                                     ${avatarHTML}
@@ -190,28 +199,94 @@ function renderEvents() {
                                         <span>${escapeHtml(garka.description)}</span>
                                     </div>
                                     <button class="btn-remove-garka" onclick="removeGarka(${event.id}, ${index})" title="Eliminar">✕</button>
-                                </div>
-                            `;
+                                </div>`;
                         }).join('')}
                     </div>
-                </div>
-            `
+               </div>`
             : '';
 
         return `
             <div class="${cardClass}" data-id="${event.id}">
                 <button class="btn-delete" onclick="deleteEvent(${event.id})" title="Eliminar evento">✕</button>
-                ${imageHTML}
-                <h3>${escapeHtml(event.title)}</h3>
-                <div class="event-date">📅 ${formattedDate}</div>
-                <p class="event-description">${escapeHtml(event.description)}</p>
-                ${garkasHTML}
-                <button class="btn-add-garka" onclick="showGarkaForm(${event.id})">
-                    ➕ Agregar Garka
-                </button>
-            </div>
-        `;
+                <button class="btn-edit" onclick="showEditModal(${event.id})" title="Editar evento">✎</button>
+                ${garkaBadge}
+                ${imageSection}
+                <div class="event-card-body">
+                    <h3>${escapeHtml(event.title)}</h3>
+                    <div class="event-date">📅 ${formattedDate}</div>
+                    <p class="event-description">${escapeHtml(event.description)}</p>
+                    ${garkasHTML}
+                    <button class="btn-add-garka" onclick="showGarkaForm(${event.id})">
+                        ➕ Agregar Garka
+                    </button>
+                    ${buildCommentsHTML(event)}
+                </div>
+            </div>`;
     }).join('');
+
+    // Restaurar paneles de comentarios que estaban abiertos
+    openComments.forEach(id => {
+        const section = document.getElementById(`comments-${id}`);
+        const toggle = document.getElementById(`comments-toggle-${id}`);
+        if (section) section.classList.add('open');
+        if (toggle) toggle.classList.add('open');
+    });
+}
+
+// Construir HTML de la sección de comentarios
+function buildCommentsHTML(event) {
+    const comments = event.comments || [];
+    const count = comments.length;
+    const countBadge = count > 0 ? `<span class="comments-count-badge">${count}</span>` : '';
+
+    const commentItems = comments.map((c, i) => `
+        <div class="comment-item">
+            <p class="comment-text">${escapeHtml(c.text)}</p>
+            <div class="comment-meta">
+                <span class="comment-date">${formatCommentDate(c.addedAt)}</span>
+                <button class="btn-remove-comment" onclick="removeComment(${event.id}, ${i})" title="Eliminar">✕</button>
+            </div>
+        </div>`).join('');
+
+    return `
+        <div class="comments-toggle" id="comments-toggle-${event.id}" onclick="toggleComments(${event.id})">
+            💬 Comentarios ${countBadge}
+            <span class="comments-chevron">▼</span>
+        </div>
+        <div class="comments-section" id="comments-${event.id}">
+            <div class="comments-list">${commentItems}</div>
+            <div class="comment-input-area">
+                <textarea id="comment-input-${event.id}" class="comment-input" placeholder="Escribe un comentario..." rows="2"></textarea>
+                <button class="btn-add-comment" onclick="addComment(${event.id})">Enviar</button>
+            </div>
+        </div>`;
+}
+
+// Formatear fecha de comentario
+function formatCommentDate(isoString) {
+    if (!isoString) return '';
+    return new Date(isoString).toLocaleDateString('es-ES', {
+        day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
+}
+
+// Actualizar barra de estadísticas
+function updateStats() {
+    const totalEvents = events.length;
+    const totalGarkas = events.reduce((sum, e) => sum + (e.garkas ? e.garkas.length : 0), 0);
+    const stats = calculateGarkaStats();
+    const topPlayer = stats.find(s => s.count > 0);
+
+    const statEvents = document.getElementById('statEvents');
+    const statGarkas = document.getElementById('statGarkas');
+    const statPlayers = document.getElementById('statPlayers');
+    const statTop = document.getElementById('statTop');
+
+    if (statEvents) statEvents.textContent = totalEvents;
+    if (statGarkas) statGarkas.textContent = totalGarkas;
+    if (statPlayers) statPlayers.textContent = persons.length;
+    if (statTop) statTop.textContent = topPlayer ? topPlayer.name : '—';
 }
 
 // Formatear fecha
@@ -364,9 +439,6 @@ function changeYear(year) {
 
 // Eliminar evento
 async function deleteEvent(id) {
-    if (!confirm('¿Estás seguro de que quieres eliminar este evento?')) return;
-    
-    // Solicitar código de acceso
     const code = await requestAccessCode('eliminar este evento');
     if (!code) return;
     
@@ -407,7 +479,16 @@ function saveEvents() {
 
 // Cargar eventos desde Firestore con listener en tiempo real
 function loadEvents() {
-    // Suscribirse a cambios en tiempo real
+    const eventsList = document.getElementById('eventsList');
+    if (eventsList) {
+        eventsList.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Conectando con Firebase...</p>
+            </div>
+        `;
+    }
+
     db.collection('events').onSnapshot((snapshot) => {
         events = [];
         snapshot.forEach((doc) => {
@@ -421,6 +502,7 @@ function loadEvents() {
         console.error('Error al cargar eventos:', error);
         showNotification('❌ Error al cargar eventos de Firebase', 'error');
         events = [];
+        renderEvents();
     });
 }
 
@@ -489,12 +571,13 @@ function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
     notification.className = 'notification';
     notification.textContent = message;
-    
-    if (type === 'error') {
-        notification.style.background = '#e63946';
-    } else if (type === 'warning') {
-        notification.style.background = '#f77f00';
-    }
+
+    const accentMap = {
+        success: 'var(--success)',
+        error: 'var(--error)',
+        warning: 'var(--warning)'
+    };
+    notification.style.setProperty('--notif-accent', accentMap[type] || accentMap.success);
 
     document.body.appendChild(notification);
 
@@ -585,9 +668,6 @@ async function addGarka(e, eventId) {
 
 // Eliminar garka
 async function removeGarka(eventId, garkaIndex) {
-    if (!confirm('¿Eliminar este garka?')) return;
-    
-    // Solicitar código de acceso
     const code = await requestAccessCode('eliminar este garka');
     if (!code) return;
     
@@ -681,3 +761,136 @@ document.addEventListener('click', (e) => {
         closeGarkaModal();
     }
 });
+
+// Mostrar modal de edición
+function showEditModal(eventId) {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    const existing = document.querySelector('.edit-modal');
+    if (existing) existing.remove();
+
+    const dateValue = event.date ? event.date.substring(0, 16) : '';
+    const imagePreview = event.image
+        ? `<div class="edit-image-preview"><img src="${event.image}" alt="actual"></div>`
+        : '';
+
+    const modal = document.createElement('div');
+    modal.className = 'garka-modal edit-modal';
+    modal.innerHTML = `
+        <div class="modal-content edit-modal-content">
+            <div class="modal-header">
+                <h3>✏️ Editar Evento</h3>
+                <button class="btn-close-modal" onclick="closeEditModal()">✕</button>
+            </div>
+            <form id="editForm" onsubmit="saveEditedEvent(event, ${eventId})">
+                <div class="edit-form-grid">
+                    <div class="form-group">
+                        <label>Título</label>
+                        <input type="text" id="editTitle" value="${escapeHtml(event.title)}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <input type="datetime-local" id="editDate" value="${dateValue}" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Descripción</label>
+                        <textarea id="editDescription" rows="3" required>${escapeHtml(event.description)}</textarea>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Imagen ${event.image ? '(deja vacío para mantener la actual)' : '(opcional)'}</label>
+                        <input type="file" id="editImage" accept="image/*">
+                        ${imagePreview}
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
+                    <button type="submit" class="btn-save">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    setTimeout(() => document.getElementById('editTitle').focus(), 100);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeEditModal(); });
+}
+
+// Cerrar modal de edición
+function closeEditModal() {
+    const modal = document.querySelector('.edit-modal');
+    if (modal) modal.remove();
+}
+
+// Toggle panel de comentarios
+function toggleComments(eventId) {
+    const section = document.getElementById(`comments-${eventId}`);
+    const toggle = document.getElementById(`comments-toggle-${eventId}`);
+    if (!section || !toggle) return;
+
+    if (openComments.has(eventId)) {
+        openComments.delete(eventId);
+        section.classList.remove('open');
+        toggle.classList.remove('open');
+    } else {
+        openComments.add(eventId);
+        section.classList.add('open');
+        toggle.classList.add('open');
+    }
+}
+
+// Agregar comentario
+async function addComment(eventId) {
+    const input = document.getElementById(`comment-input-${eventId}`);
+    const text = input ? input.value.trim() : '';
+    if (!text) return;
+
+    const code = await requestAccessCode('agregar un comentario');
+    if (!code) return;
+
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    if (!event.comments) event.comments = [];
+    event.comments.push({ text, addedAt: new Date().toISOString() });
+
+    await saveEvent(event);
+    showNotification('💬 Comentario agregado');
+}
+
+// Eliminar comentario
+async function removeComment(eventId, index) {
+    const code = await requestAccessCode('eliminar este comentario');
+    if (!code) return;
+
+    const event = events.find(e => e.id === eventId);
+    if (!event || !event.comments) return;
+
+    event.comments.splice(index, 1);
+    await saveEvent(event);
+    showNotification('🗑️ Comentario eliminado');
+}
+
+// Guardar cambios del evento editado
+async function saveEditedEvent(e, eventId) {
+    e.preventDefault();
+
+    const code = await requestAccessCode('editar este evento');
+    if (!code) return;
+
+    const event = events.find(ev => ev.id === eventId);
+    if (!event) return;
+
+    event.title = document.getElementById('editTitle').value;
+    event.date = document.getElementById('editDate').value;
+    event.description = document.getElementById('editDescription').value;
+
+    const imageFile = document.getElementById('editImage').files[0];
+    if (imageFile) {
+        event.image = await convertImageToBase64(imageFile);
+    }
+
+    await saveEvent(event);
+    closeEditModal();
+    showNotification('✅ Evento actualizado');
+}

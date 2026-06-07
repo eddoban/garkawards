@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GARKAWARDS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,6 +17,28 @@
                 <h1>🎮 GARKAWARDS</h1>
                 <p class="subtitle">fecha fifa 2025</p>
             </div>
+
+            <!-- Stats Bar -->
+            <div id="statsBar" class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-value" id="statEvents">—</span>
+                    <span class="stat-label">Eventos</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="statGarkas">—</span>
+                    <span class="stat-label">Garkas</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="statPlayers">3</span>
+                    <span class="stat-label">Jugadores</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="statTop">—</span>
+                    <span class="stat-label">Más Garkas</span>
+                </div>
+            </div>
+
+            <!-- Podio -->
             <div id="podium" class="podium">
                 <!-- El podio se cargará dinámicamente -->
             </div>
@@ -22,11 +47,9 @@
         <!-- Lista de Eventos -->
         <section class="events-section">
             <div class="events-header">
-                <h2>🏆 Próximos Eventos</h2>
+                <h2>🏆 Eventos</h2>
                 <div class="events-actions">
-                    <button id="exportBtn" class="btn-action">📥 Exportar JSON</button>
-                    <label for="importFile" class="btn-action">📤 Importar JSON</label>
-                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                    <button id="exportBtn" class="btn-action">📥 Exportar</button>
                 </div>
             </div>
             <div id="eventsList" class="events-list">
@@ -36,7 +59,7 @@
 
         <!-- Formulario -->
         <section class="form-section">
-            <h2>📝 Crear Nuevo Evento</h2>
+            <h2>📝 Crear Evento</h2>
             <form id="eventForm" class="event-form">
                 <div class="form-group">
                     <label for="title">Título del Evento</label>
@@ -48,12 +71,12 @@
                     <input type="datetime-local" id="date" name="date" required>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group full-width">
                     <label for="description">Descripción</label>
-                    <textarea id="description" name="description" rows="4" placeholder="Cuéntanos sobre el evento..." required></textarea>
+                    <textarea id="description" name="description" rows="3" placeholder="Cuéntanos sobre el evento..." required></textarea>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group full-width">
                     <label for="image">Imagen del Evento</label>
                     <input type="file" id="image" name="image" accept="image/*">
                     <div id="imagePreview" class="image-preview"></div>
@@ -67,10 +90,10 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+
     <!-- Configuración de Firebase -->
     <script src="firebase-config.js"></script>
-    
+
     <!-- Script principal -->
     <script src="script.js"></script>
 </body>
