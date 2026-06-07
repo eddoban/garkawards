@@ -845,6 +845,8 @@ body::after {
 .form-group input,
 .form-group textarea,
 .form-group select {
+    width: 100%;
+    min-width: 0;
     padding: 12px 14px;
     background: rgba(0, 0, 0, 0.28);
     border: 1px solid rgba(255,255,255,0.08);
@@ -1303,6 +1305,12 @@ select option {
     .event-form { grid-template-columns: 1fr; }
     .form-group.full-width { grid-column: 1; }
     .btn-submit { grid-column: 1; }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select,
+    .comment-input,
+    .code-input { font-size: 16px; }
 
     .modal-actions { flex-direction: column; }
     .notification { right: 12px; left: 12px; min-width: unset; max-width: unset; }
